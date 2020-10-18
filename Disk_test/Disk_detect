@@ -1,0 +1,66 @@
+#!/bin/bash
+#This script can detect all disk capacities and the capacity of each disk
+#The author : Zhou Shijie
+#Creation Time：2020.10.16
+#Mail:zsjmoilab@.net
+
+disk_sda_1=`df -h |sed -n '9p'|awk '{print $5}'|cut -f 1 -d '%'`
+
+if 
+	((disk_sda_1 > 85));
+then 
+echo "10.98.103.201's sda1 is over 85%" | mail -s "disk over 85%" wb092 < /home/zsj123/disk.txt
+fi
+  
+result_file="/home/zsj123/"DATA.rpt
+    exec > disk.txt
+Time=`date "+%Y-%m-%d__%H:%M:%S"`
+	echo 检测时间：$Time
+start=`date +%s`
+function UNDER_LINE() {
+    echo -e "----------------------------------------------------------"
+}
+echo 磁盘总览：
+UNDER_LINE;
+eval `df -T -h -m -x tmpfs -x devtmpfs | tail -n +2 | awk -v DiskSum=0 -v DiskLeft=0 '{printf("Pname["NR"]=%s;Psum["NR"]=%d;Pleft["NR"]=%d;Puseperc["NR"]=%s;", $7 ,$3, $4, $6); DiskSum+=$3; DiskLeft+=$5} END {printf("Pnum=%d;DiskSum=%d;DiskLeft=%d", NR, DiskSum, DiskLeft)}'`
+
+for ((i = 1; i <= ${Pnum}; i++))
+do
+    echo "${Pname[$i]} ${Psum[$i]} ${Pleft[$i]} ${Puseperc[$i]}"
+done
+DiskPerc=$[ (100 - ${DiskLeft}*100/${DiskSum} ) ]
+echo "disk ${DiskSum} ${DiskLeft} ${DiskPerc}%"
+
+UNDER_LINE;
+echo "进阶数据"
+echo "The space of [data] Top 10 user"
+
+UNDER_LINE;
+du -sh /data/* | sort -rh | sed -e '{$d;}' | awk '{printf $1 "        " $2 "\n"}'
+
+UNDER_LINE;
+echo "The space of [home] Top 10 user"
+UNDER_LINE;
+du -sh /home/* | sort -rh | sed -e '{$d;}' | awk '{printf $1 "        " $2 "\n"}'
+
+end=`date +%s`
+dif=`echo "scale=4; $[end-start]" | bc`
+
+UNDER_LINE;
+echo "关于.fastq, .sam  and .vcf文件数量统计"
+UNDER<LINE;
+echo "文件数量总览"
+sudo find /home -regextype posix-extended -regex ".*\.(sam|fastq|vcf)" | xargs du -cb | sort -rh | uniq -c | awk '{print $2 "    " $3 }' | sed -e '{12, $d;}'
+UNDER_LINE;
+进阶数据
+echo ".sam文件数量Top 5 "
+sudo find /home -regextype posix-extended -regex ".*\.(sam)" | xargs du -cb | sort -rh | uniq -c | awk '{print $2 "    " $3 }' | sed -e '{7, $d;}'
+UNDER_LINE;
+echo ".fastq文件数量Top 5 "
+sudo find /home -regextype posix-extended -regex ".*\.(fastq)" | xargs du -cb | sort -rh | uniq -c | awk '{print $2 "    " $3 }' | sed -e '{7, $d;}'
+UNDER_LINE;
+echo ".vcf文件数量Top 5 "
+sudo find /home -regextype posix-extended -regex ".*\.(vcf)" | xargs du -cb | sort -rh | uniq -c | awk '{print $2 "    " $3 }' | sed -e '{7, $d;}'
+UNDER_LINE;
+echo "共用时$dif秒!"
+
