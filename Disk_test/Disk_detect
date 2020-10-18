@@ -4,6 +4,7 @@
 #Creation Time：2020.10.16
 #Mail:zsjmoilab@.net
 
+
 disk_sda_1=`df -h |sed -n '9p'|awk '{print $5}'|cut -f 1 -d '%'`
 
 if 
